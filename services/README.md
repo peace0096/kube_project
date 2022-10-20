@@ -21,39 +21,42 @@ Pod들이 클러스터 내부의 다른 오브젝트들과 통신할 수 있도�
 
 <br>
 <br>
+
 ### 4.ExternelName
 Selector 대신 dnsName을 사용할 때 쓰는 오브젝트
 
 ---
 <br>
 
-####네임스페이스의 서비스 오브젝트 확인
+#### 네임스페이스의 서비스 오브젝트 확인
 ```
 kubectl get svc -n [namespace]
 ```
 
 <br>
+
 ## 현재 서비스 구조
-####payment
+#### payment
 ```
 NAME          TYPE       CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE
 payment-app   NodePort   10.80.1.12   <none>        80:30891/TCP   13m
 ```
-####order
+#### order
 ```
 NAME        TYPE           CLUSTER-IP    EXTERNAL-IP                               PORT(S)   AGE
 delivery    ExternalName   <none>        delivery-app.delivery.svc.cluster.local   80/TCP    62s
 order-app   ClusterIP      10.80.9.146   <none>                                    80/TCP    11m
 payment     ExternalName   <none>        payment-app.payment.svc.cluster.local     80/TCP    62s
 ```
-####delivery
+#### delivery
 ```
 NAME           TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
 delivery-app   NodePort   10.80.2.169   <none>        80:32527/TCP   13m
 ```
 
 <br>
-####엔드포인트 확인
+
+#### 엔드포인트 확인
 ```
 kubectl get endpoints -n [namespace]
 ```
