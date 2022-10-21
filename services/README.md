@@ -27,6 +27,15 @@ Pod들이 클러스터 내부의 다른 오브젝트들과 통신할 수 있도�
 ### 4.ExternelName
 Selector 대신 DnsName을 사용할 때 쓰는 오브젝트
 
+자기자신의 namespace에서 다른 클러스터를 호출할 수 있다.
+
+#### 아래 소스코드 결과는 같은 결과를 출력함
+```
+$ kubectl exec order-1.0-6f58c98cbc-kpvvl -n order -- curl -sv delivery-app.delivery.svc.cluster.local
+
+$ kubectl exec order-1.0-6f58c98cbc-kpvvl -n order -- curl -sv delivery.order.svc.cluster.local
+```
+
 ---
 <br>
 
