@@ -19,6 +19,7 @@ metadata:
   name: order-app
   namespace: order
 spec:
+  type: NodePort
   selector:
     app: order
   ports:

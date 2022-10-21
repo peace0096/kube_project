@@ -119,3 +119,44 @@ $ kubectl get endpoints -n order
 NAME        ENDPOINTS   AGE
 order-app   <none>      43m
 ```
+
+<br>
+
+#### 서비스 포트포워딩
+```
+kubectl port-forward service/<service-name> host-port:pod-port -n <namespace>
+```
+
+<br>
+
+#### DNS 통신
+```
+kubectl exec <pod-name> -n <namespace> -- curl -sv <dns-endpoints>
+```
+
+#### 예시
+```
+$ kubectl exec order-1.0-6f58c98cbc-kpvvl -n order -- curl -sv payment-app.payment.svc.cluster.local
+*   Trying 10.80.1.12:80...
+* Connected to payment-app.payment.svc.cluster.local (10.80.1.12) port 80 (#0)
+> GET / HTTP/1.1
+> Host: payment-app.payment.svc.cluster.local
+> User-Agent: curl/7.79.1
+> Accept: */*
+>
+Welcome to Snackbar!
+Order First Before Payment!
+
+===== Host Info =====
+HostIP: 10.76.0.6
+HostName: payment-1.0-565795755f-k2g5d* Mark bundle as not supporting multiuse
+< HTTP/1.1 200 OK
+< X-Powered-By: Express
+< Date: Fri, 21 Oct 2022 01:10:21 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+< Content-Length: 128
+<
+{ [128 bytes data]
+* Connection #0 to host payment-app.payment.svc.cluster.local left intact
+```
