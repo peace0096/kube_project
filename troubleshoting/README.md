@@ -47,13 +47,68 @@ sudo kubeadm init
 ```
 
 
-## :6443 connection refused
+<br>
+
+## nodelocaldns status is crashloopbackoff
+
+에러내용
+```
+NAMESPACE     NAME                              READY   STATUS             RESTARTS         AGE
+kube-system   calico-node-6ngpx                 1/1     Running            0                146m
+kube-system   calico-node-pczsm                 1/1     Running            0                146m
+kube-system   coredns-74d6c5659f-9gbh8          1/1     Running            0                146m
+kube-system   coredns-74d6c5659f-rjzzh          1/1     Running            0                146m
+kube-system   dns-autoscaler-59b8867c86-6rzg2   1/1     Running            0                146m
+kube-system   kube-apiserver-node1              1/1     Running            1                147m
+kube-system   kube-controller-manager-node1     1/1     Running            1                147m
+kube-system   kube-proxy-mh6r4                  1/1     Running            0                146m
+kube-system   kube-proxy-wq5hf                  1/1     Running            0                146m
+kube-system   kube-scheduler-node1              1/1     Running            1                147m
+kube-system   nginx-proxy-node2                 1/1     Running            9                146m
+kube-system   nodelocaldns-5lb7h                0/1     CrashLoopBackOff   33 (2m41s ago)   146m
+kube-system   nodelocaldns-vq8c2                1/1     Running            0                146m
+```
 
 에러원인
-kube proxy가 swap 메모리를 차지하여 발생한 문제라고 알려져있지만, 이미 swap 메모리가 비활성화된 상태이다. 
+
+```169.254.25.10```이라는 dns server로 health 체크를 하고 있었다.
+
+```resolv.conf```의 nameserver인데 이를 변경해야한다.
+
+
+<br>
 
 해결방법
-### kubeconfig를 worker node에 전달
+
+```resolv.conf```의 nameserver가 변경되지 않도록 ```mask``` 작업을 해야 한다.
+
+```systemd-resolved```를 사용하고 있다면 다른 경로에 위치한 ```resolv.conf```의 내용도 동일시해야한다.
+
+아래 명령어를 적용시킨 뒤, 다시 쿠버네티스 설치를 해야한다(```kubeadm init```)
+
 ```
-scp $HOME/.kube/config root@192.168.50.254:/root/.kube/
+sudo systemctl mask systemd-resolved
+rm -f /etc/resolv.conf
+sudo ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+```
+
+<br>
+
+그렇다면, 다시 돌아올 것이다.
+
+```
+NAMESPACE     NAME                              READY   STATUS    RESTARTS   AGE
+kube-system   calico-node-4k22j                 1/1     Running   0          9m18s
+kube-system   calico-node-gj8pc                 1/1     Running   0          9m18s
+kube-system   coredns-74d6c5659f-2ml2l          1/1     Running   0          9m2s
+kube-system   coredns-74d6c5659f-vsvsx          1/1     Running   0          9m
+kube-system   dns-autoscaler-59b8867c86-qx27j   1/1     Running   0          9m1s
+kube-system   kube-apiserver-node1              1/1     Running   1          10m
+kube-system   kube-controller-manager-node1     1/1     Running   1          10m
+kube-system   kube-proxy-4hn2b                  1/1     Running   0          9m28s
+kube-system   kube-proxy-q62pw                  1/1     Running   0          9m28s
+kube-system   kube-scheduler-node1              1/1     Running   1          10m
+kube-system   nginx-proxy-node2                 1/1     Running   0          9m31s
+kube-system   nodelocaldns-5vm4w                1/1     Running   0          9m1s
+kube-system   nodelocaldns-nhldg                1/1     Running   0          9m1s
 ```
