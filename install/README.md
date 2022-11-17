@@ -124,3 +124,19 @@ sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 ```
 
+### 쿠버네티스 대시보드 설치 및 실행
+
+설치
+
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.6.0/aio/deploy/recommended.yaml
+```
+
+<br>
+
+Svc 형태가 ClusterIP이므로, ```kubectl proxy```를 통해 개방해야한다.
+
+
+```
+kubectl proxy --disable-filter=true --address=0.0.0.0
+```

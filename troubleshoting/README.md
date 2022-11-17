@@ -112,3 +112,6 @@ kube-system   nginx-proxy-node2                 1/1     Running   0          9m3
 kube-system   nodelocaldns-5vm4w                1/1     Running   0          9m1s
 kube-system   nodelocaldns-nhldg                1/1     Running   0          9m1s
 ```
+
+
+<br>
