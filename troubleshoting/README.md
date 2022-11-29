@@ -118,3 +118,18 @@ kube-system   nodelocaldns-nhldg                1/1     Running   0          9m1
 
 
 
+## 1 node(s) had untolerated taint {node.kubernetes.io/disk-pressure:
+### 에러 내용
+mysql deployment를 적용하던 중, pv가 bounding된 상태임에도 불구하고, 배포된 Pod의 상태가 Pending에 빠졌음. ```kubectl describe```를 통해 다음과 같은 문구를 확인할 수 있었음.
+<br>
+
+```
+Events:
+  Type     Reason            Age   From               Message
+  ----     ------            ----  ----               -------
+  Warning  FailedScheduling  13s   default-scheduler  0/2 nodes are available: 1 node(s) had untolerated taint {node.kubernetes.io/disk-pressure: }, 1 node(s) had volume node affinity conflict. preemption: 0/2 nodes are available: 2 Preemption is not helpful for scheduling.
+```
+
+### 해결방법
+
+주목해야할 것은 ```node.kubernetes.io/disk-pressure:```인데, 디스크 용량이 부족하다는 뜻이다. mysql의 spec을 보면 최소 10G의 pv를 붙여야 하는데 배포된 pv가 10G를 차지하기엔 서버의 용량이 부족하다. 따라서, 이건 디스크 용량 정리가 필요한 부분이다.
