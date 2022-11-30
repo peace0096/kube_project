@@ -133,3 +133,72 @@ Events:
 ### 해결방법
 
 주목해야할 것은 ```node.kubernetes.io/disk-pressure:```인데, 디스크 용량이 부족하다는 뜻이다. mysql의 spec을 보면 최소 10G의 pv를 붙여야 하는데 배포된 pv가 10G를 차지하기엔 서버의 용량이 부족하다. 따라서, 이건 디스크 용량 정리가 필요한 부분이다.
+
+<br>
+
+## Pv's status fall in stuck, "Terminating"
+### 에러내용
+pv 오브젝트를 제거한 뒤, Terminating 상태에 빠지고 삭제가 되지 않는다.
+
+```
+NAME         CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS        CLAIM                     STORAGECLASS    REASON   AGE
+pv-volumn2   10Gi       RWO            Retain           Terminating   kubeflow/katib-mysql      local-storage            44h
+pv-volumn3   20Gi       RWO            Retain           Terminating   kubeflow/minio-pvc        local-storage            44h
+pv-volumn4   20Gi       RWO            Retain           Terminating   kubeflow/mysql-pv-claim   local-storage            44h
+```
+<br>
+
+### 해결방법
+강제로 삭제한 뒤, patch를 통해 pv를 완전히 종료시켜야 한다.
+```
+kubectl delete pv <pv_name> --grace-period=0 --force
+kubectl patch pv <pv_name> -p '{"metadata": {"finalizers": null}}'
+```
+
+
+<br>
+
+## Error opening bolt store: open /var/lib/authservice/data.db: permission denied
+
+### 에러내용
+Kubeflow 오브젝트 중 하나인 authservice pod의 상태가 ```CrashLoopBackOff```에 빠졌음. 해당 pod의 로그를 확인해봤음.
+
+```
+kubectl logs -f authservice-0 -n istio-system
+time="2022-11-30T01:39:09Z" level=info msg="Starting readiness probe at 8081"
+time="2022-11-30T01:39:09Z" level=info msg="No  USERID_TOKEN_HEADER  specified, using 'kubeflow-userid-token' as default."
+time="2022-11-30T01:39:09Z" level=info msg="No  SERVER_HOSTNAME  specified, using '' as default."
+time="2022-11-30T01:39:09Z" level=info msg="No  SERVER_PORT  specified, using '8080' as default."
+time="2022-11-30T01:39:09Z" level=info msg="No  SESSION_MAX_AGE  specified, using '86400' as default."
+time="2022-11-30T01:39:09Z" level=info msg="Starting web server at :8080"
+time="2022-11-30T01:39:09Z" level=fatal msg="Error opening bolt store: open /var/lib/authservice/data.db: permission denied"
+```
+
+주목해야할 것은 ```open /var/lib/authservice/data.db: permission denied"``` 이부분인데, 접근하려는 db 파일이 관리자권한으로 되어있어서 접근거부가 되고 있다.
+
+### 해결방법
+authservice statefulset의 내용을 수정해야한다. 컨테이너가 배포되었을 때 ```chmod -R 777```을 통해 db파일의 접근권한을 유저까지 접근할 수 있도록 수정한다.
+우선, 아래처럼 authservice의 yaml로 접근한다.
+```
+kubectl edit statefulset -n istio-system authservice
+```
+
+컨테이너 배포가 되는 동시에 권한을 수정해야하기 때문에 ```spec.template.spec.initContainers```을 아래처럼 추가한다.
+```
+initContainers:
+  - name: modifiy-permission
+    image: busybox
+    command: ['sh', '-c']
+    args: ['chmod -R 777 /var/lib/authservice;']
+    volumeMounts:
+    - mountPath: /var/lib/authservice
+      name: data
+```
+
+statefulset의 내용을 지워도 내용이 반영되지 않기 때문에 pod를 지워야 한다(어차피 deployment에 의해 자동으로 다시 배포된다)
+
+그러면 아래와 같이 pod의 상태가 Running으로 바뀐다.
+```
+NAMESPACE                   NAME                                                     READY   STATUS             RESTARTS         AGE
+istio-system                authservice-0                                            1/1     Running            0
+```
